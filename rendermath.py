@@ -53,7 +53,6 @@ def render_math(src, output, dpi=120, is_display=False):
     tempfilepath = os.path.dirname(tempfilename)
     # Run latex
     latex_args = ['latex']
-    latex_args += ['-silent'] # no output
     latex_args += ['-interaction=nonstopmode'] # no interaction with console
     latex_args += [tempfilename] # set input file
     latex_out, latex_err = call(latex_args, cwd = tempfilepath)
