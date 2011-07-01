@@ -2,6 +2,7 @@ from tempfile import NamedTemporaryFile
 import os
 import os.path
 import subprocess
+import re
 
 def call(*args, **kwargs):
     """Using the parameters to subprocess.Popen.__init__, return
@@ -30,9 +31,11 @@ def call(*args, **kwargs):
 
 def render_math(src, output, dpi=120, is_display=False):
     """ Given a string `src`, which is in LaTeX math syntax, write a png to the
-    file at the path `output`.
+    file at the path `output`, and return the number of pixels from the bottom
+    of the image, to the baseline.
 
     >>>render_math(r"\sum_{k=1}^n k = \frac{n(n+1)}{2}", "output.png")
+    6
     >>>os.path.exists("output.png")
     True
     """
@@ -45,9 +48,15 @@ def render_math(src, output, dpi=120, is_display=False):
     with NamedTemporaryFile(suffix='.tex', delete=False) as tempfile:
         tempfilename = tempfile.name
         tempfile.write(r"""\documentclass[12pt]{article}
-        \pagestyle{empty}
+        \usepackage{amsmath}
+        \usepackage{amsfonts}
+        \usepackage{amssymb}
+        \usepackage{colordvi}
+        \usepackage[active]{preview}
         \begin{document}
+        \begin{preview}
         %s
+        \end{preview}
         \end{document}""" % tagged_src)
 
     tempfilepath = os.path.dirname(tempfilename)
@@ -60,11 +69,13 @@ def render_math(src, output, dpi=120, is_display=False):
         raise RuntimeError(latex_err)
     # Run dvipng
     dvipng_args = ['dvipng']
+    dvipng_args += ['-depth'] # report baseline
     dvipng_args += ['-D', str(dpi)] # set dpi
     dvipng_args += ['-T', 'tight'] # make bounding box tight
     dvipng_args += ['-o', os.path.abspath(output)] # set output file
     dvipng_args += [tempfilename[:-3] + "dvi"] # set input file
     dvipng_out, dvipng_err = call(dvipng_args)
+    baseline = int(re.search("depth=(\d+)", dvipng_out).group(1))
     # Clean up temp files
     def remove_if_exists(filename):
         try:
@@ -75,4 +86,5 @@ def render_math(src, output, dpi=120, is_display=False):
     remove_if_exists(tempfilename[:-3] + "dvi")
     remove_if_exists(tempfilename[:-3] + "aux")
     remove_if_exists(tempfilename[:-3] + "log")
+    return baseline
 
