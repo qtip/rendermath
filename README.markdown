@@ -12,6 +12,7 @@ Usage
 =====
     >>>from rendermath import render_math
     >>>render_math(r"\sum_{k=1}^n k = \frac{n(n+1)}{2}", "output.png")
+    6
     >>>import os
     >>>os.path.exists("output.png")
     True
